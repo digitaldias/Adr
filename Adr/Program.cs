@@ -13,6 +13,8 @@ public static class Program
 
         var tool = new AdrTool(path);
 
+        tool.Run();
+
         return 0;
     }
 
@@ -22,7 +24,7 @@ public static class Program
         Cout.Title("ADR-Tool");
         Cout.Hr();
 
-        Console.WriteLine("Interactive tool for working with ADR records. Point to your solution folder to get started.");
-        Console.WriteLine("Usage: adr [path]");
+        Cout.Info("Interactive tool for working with ADR records. Point to your solution folder to get started.");
+        Cout.Info("Usage: {Adr} {Path}", "adr", "[[path]]");
     }
 }

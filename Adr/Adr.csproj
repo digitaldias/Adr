@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <PackageReference Include="LibGit2Sharp" Version="0.27.2" />
+    <PackageReference Include="Markdig" Version="0.31.0" />
     <PackageReference Include="Spectre.Console" Version="0.47.0" />
     <PackageReference Include="Spectre.Console.Analyzer" Version="0.47.0">
       <PrivateAssets>all</PrivateAssets>

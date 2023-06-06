@@ -2,7 +2,7 @@
   "profiles": {
     "Adr": {
       "commandName": "Project",
-      "commandLineArgs": "E:\\dev\\ts\\work\\Kolly\\src\\"
+      "commandLineArgs": "."
     }
   }
 }

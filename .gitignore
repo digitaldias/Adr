@@ -522,3 +522,6 @@ $RECYCLE.BIN/
 /Adr/obj/Debug/net7.0/Adr.csproj.BuildWithSkipAnalyzers
 /Adr/obj/Debug/net7.0/Adr.GlobalUsings.g.cs
 /Adr/obj/project.assets.json
+/.vs/AdrTool/DesignTimeBuild/.dtbcache.v2
+/.vs/AdrTool/FileContentIndex/5e1635a6-a743-4c45-80b0-7a3a6c4b4d5c.vsidx
+/.vs/AdrTool/FileContentIndex/b608f0c4-9936-4a3f-ae25-bfba1f0cdebf.vsidx

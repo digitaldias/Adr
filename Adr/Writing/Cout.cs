@@ -5,8 +5,17 @@ namespace Adr;
 
 public static partial class Cout
 {
-    public static void Hr()
-        => AnsiConsole.Write(new Rule());
+    public static void Hr(string title = "")
+    {
+        if (string.IsNullOrEmpty(title))
+        {
+            AnsiConsole.Write(new Rule());
+            return;
+        }
+
+        AnsiConsole.Write(new Rule(title).LeftJustified());
+    }
+
     public static void Cls()
         => AnsiConsole.Clear();
 

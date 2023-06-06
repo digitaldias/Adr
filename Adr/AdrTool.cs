@@ -1,11 +1,20 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using Adr.Models;
 using LibGit2Sharp;
+using Markdig;
+using Markdig.Extensions.Tables;
+using Markdig.Syntax;
+using Markdig.Syntax.Inlines;
+using Spectre.Console;
+using MdTable = Markdig.Extensions.Tables.Table;
+using MdTableRow = Markdig.Extensions.Tables.TableRow;
 
 namespace Adr;
 
 public sealed class AdrTool
 {
     private string _rootFolder;
+    private string _docsFolder;
 
     public AdrTool(string givenPath)
     {
@@ -17,6 +26,11 @@ public sealed class AdrTool
             throw new UnmatchedPathException(message);
         }
 
+        if (string.IsNullOrEmpty(givenPath) || givenPath == ".")
+        {
+            givenPath = Environment.CurrentDirectory;
+        }
+
         _rootFolder = GetGitRootFolder(givenPath);
         if (string.IsNullOrEmpty(_rootFolder))
         {
@@ -26,8 +40,82 @@ public sealed class AdrTool
             throw new ValidationException(message);
         }
 
-        var docsFolder = GetDocsFolder(givenPath);
-        Cout.Success("ADR Path found in '{DocsFolder}'. We can begin!", docsFolder);
+        _docsFolder = GetDocsFolder(givenPath);
+        if (string.IsNullOrEmpty(_docsFolder))
+        {
+            _docsFolder = AskAndCreateAdrFolder();
+        }
+    }
+
+    private string AskAndCreateAdrFolder()
+    {
+        if (!AnsiConsole.Confirm("No ADR structure exists here. Create it?", defaultValue: false))
+        {
+            return string.Empty;
+        }
+
+        var adrFolder = Path.Combine(_rootFolder, "docs");
+        if (!Directory.Exists(adrFolder))
+        {
+            Directory.CreateDirectory(adrFolder);
+        }
+
+        adrFolder = Path.Combine(adrFolder, "adr");
+        if (!Directory.Exists(adrFolder))
+        {
+            Directory.CreateDirectory(adrFolder);
+        }
+
+        return adrFolder;
+    }
+
+    public void Run()
+    {
+        DisplayInfo();
+        var filesInFolder = Directory.GetFiles(_docsFolder, "*.md");
+        var indexFile = filesInFolder.FirstOrDefault(f => f.Contains("0000-index"));
+
+        if (!string.IsNullOrEmpty(indexFile))
+        {
+            ProcessIndexFile(indexFile);
+        }
+
+    }
+
+    private static void ProcessIndexFile(string indexFile)
+    {
+        var content = File.ReadAllText(indexFile);
+        var pipeline = new MarkdownPipelineBuilder().UseAdvancedExtensions().Build();
+        var document = Markdown.Parse(content, pipeline);
+        var table = document.Descendants<MdTable>().FirstOrDefault();
+        var adrEntries = new List<AdrEntry>();
+
+        if (table is not null)
+        {
+            foreach (var row in table.Descendants<MdTableRow>().Skip(1))
+            {
+                var cells = row.Descendants<TableCell>().ToList();
+                var number = string.Concat(cells[0].Descendants<LiteralInline>().Select(x => x.Content));
+                var title = string.Concat(cells[1].Descendants<LiteralInline>().Select(x => x.Content));
+                var link = cells[1].Descendants<LinkInline>().FirstOrDefault();
+
+                adrEntries.Add(new()
+                {
+                    Number = int.Parse(number),
+                    Title = title,
+                    Url = link?.Url ?? string.Empty,
+                });
+            }
+        }
+    }
+
+    private void DisplayInfo()
+    {
+        Cout.Cls();
+        Cout.Title("ADR Tool");
+        Cout.Hr("v1.0 by digitaldias. 2023");
+        Cout.Success("Working in folder '{DocsFolder}'", _docsFolder);
+        Cout.Hr();
     }
 
     private string GetDocsFolder(string? givenPath)
