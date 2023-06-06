@@ -478,3 +478,22 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+/Adr/bin/Debug/net7.0/Adr.deps.json
+/Adr/bin/Debug/net7.0/Adr.dll
+/Adr/bin/Debug/net7.0/Adr.exe
+/Adr/bin/Debug/net7.0/Adr.pdb
+/Adr/bin/Debug/net7.0/Adr.runtimeconfig.json
+/Adr/bin/Debug/net7.0/LibGit2Sharp.dll
+/Adr/bin/Debug/net7.0/Spectre.Console.Cli.dll
+/Adr/bin/Debug/net7.0/Spectre.Console.dll
+/.vs/AdrTool/v17/.suo
+/Adr/obj/Debug/net7.0/ref/Adr.dll
+/Adr/obj/Debug/net7.0/refint/Adr.dll
+/.vs/AdrTool/FileContentIndex/0eb6bb5e-97e4-4d31-9e03-7f56a408e498.vsidx
+/.vs/AdrTool/FileContentIndex/51381eb7-e1a3-4b85-8311-5e8d11afa99b.vsidx
+/Adr/obj/Debug/net7.0/Adr.AssemblyInfo.cs
+/Adr/obj/Debug/net7.0/Adr.AssemblyInfoInputs.cache
+/Adr/obj/Debug/net7.0/Adr.csproj.CoreCompileInputs.cache
+/Adr/obj/Debug/net7.0/Adr.dll
+/Adr/obj/Debug/net7.0/Adr.pdb
+/Adr/obj/Debug/net7.0/apphost.exe
