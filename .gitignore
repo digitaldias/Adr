@@ -515,3 +515,10 @@ $RECYCLE.BIN/
 /Adr/obj/Debug/net7.0/Adr.GeneratedMSBuildEditorConfig.editorconfig
 /Adr/obj/Debug/net7.0/Adr.genruntimeconfig.cache
 /Adr/obj/project.nuget.cache
+/Adr/obj/Adr.csproj.nuget.dgspec.json
+/Adr/obj/Adr.csproj.nuget.g.props
+/Adr/obj/Adr.csproj.nuget.g.targets
+/Adr/obj/Debug/net7.0/.NETCoreApp,Version=v7.0.AssemblyAttributes.cs
+/Adr/obj/Debug/net7.0/Adr.csproj.BuildWithSkipAnalyzers
+/Adr/obj/Debug/net7.0/Adr.GlobalUsings.g.cs
+/Adr/obj/project.assets.json
