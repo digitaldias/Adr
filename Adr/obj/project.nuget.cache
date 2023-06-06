@@ -1,0 +1,15 @@
+{
+  "version": 2,
+  "dgSpecHash": "H0Svu21qxlmtfVJr43apAmAdU32SkoXlLwuDe8xX2svjM7QVqOCi8toLBX1zjUsF8GGKV8tCl7QCCJQ+yCRmrg==",
+  "success": true,
+  "projectFilePath": "E:\\dev\\private\\Utilities\\AdrTool\\AdrTool\\Adr\\Adr.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\pedro\\.nuget\\packages\\libgit2sharp\\0.27.2\\libgit2sharp.0.27.2.nupkg.sha512",
+    "C:\\Users\\pedro\\.nuget\\packages\\libgit2sharp.nativebinaries\\2.0.320\\libgit2sharp.nativebinaries.2.0.320.nupkg.sha512",
+    "C:\\Users\\pedro\\.nuget\\packages\\spectre.console\\0.47.0\\spectre.console.0.47.0.nupkg.sha512",
+    "C:\\Users\\pedro\\.nuget\\packages\\spectre.console.analyzer\\0.47.0\\spectre.console.analyzer.0.47.0.nupkg.sha512",
+    "C:\\Users\\pedro\\.nuget\\packages\\spectre.console.cli\\0.47.0\\spectre.console.cli.0.47.0.nupkg.sha512",
+    "C:\\Users\\pedro\\.nuget\\packages\\system.memory\\4.5.5\\system.memory.4.5.5.nupkg.sha512"
+  ],
+  "logs": []
+}
