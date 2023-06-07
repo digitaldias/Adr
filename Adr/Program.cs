@@ -1,4 +1,6 @@
-﻿namespace Adr;
+﻿using Adr.VsCoding;
+
+namespace Adr;
 
 public static class Program
 {
@@ -12,6 +14,12 @@ public static class Program
         var path = args.Any() ? args[0] : Environment.CurrentDirectory;
 
         var tool = new AdrTool(path);
+
+        if (!VSCode.IsVSCodeInstalled())
+        {
+            Cout.Fail("In order to use this tool, you must have {VsCode} installed and active in your {Path}", "Visual Studio Code", "PATH");
+            return 1;
+        }
 
         tool.Run();
 

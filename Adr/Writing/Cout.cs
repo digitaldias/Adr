@@ -39,8 +39,11 @@ public static partial class Cout
     private static void Write(Situation color, string message)
         => AnsiConsole.MarkupLine(Wrap(message, color));
 
-    private static string Wrap(string text, Situation color)
+    public static string Wrap(string text, Situation color)
         => $"[{SituationColors[color]}]{text}[/]";
+
+    public static string Bold(string text)
+        => $"[bold]{text}[/]";
 
 
     public enum Situation

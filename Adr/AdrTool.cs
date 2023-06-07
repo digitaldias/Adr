@@ -1,13 +1,10 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using Adr.Markdowners;
 using Adr.Models;
+using Adr.VsCoding;
+using Adr.Writing;
 using LibGit2Sharp;
-using Markdig;
-using Markdig.Extensions.Tables;
-using Markdig.Syntax;
-using Markdig.Syntax.Inlines;
 using Spectre.Console;
-using MdTable = Markdig.Extensions.Tables.Table;
-using MdTableRow = Markdig.Extensions.Tables.TableRow;
 
 namespace Adr;
 
@@ -15,6 +12,7 @@ public sealed class AdrTool
 {
     private string _rootFolder;
     private string _docsFolder;
+    private string? _indexFile;
 
     public AdrTool(string givenPath)
     {
@@ -43,27 +41,31 @@ public sealed class AdrTool
         _docsFolder = GetDocsFolder(givenPath);
         if (string.IsNullOrEmpty(_docsFolder))
         {
-            _docsFolder = AskAndCreateAdrFolder();
+            _docsFolder = AskForAndCreateAdrFolder();
         }
     }
 
-    private string AskAndCreateAdrFolder()
+    private string AskForAndCreateAdrFolder()
     {
         if (!AnsiConsole.Confirm("No ADR structure exists here. Create it?", defaultValue: false))
         {
             return string.Empty;
         }
 
-        var adrFolder = Path.Combine(_rootFolder, "docs");
+        var adrFolder = Path.Combine(_rootFolder, "Docs");
         if (!Directory.Exists(adrFolder))
         {
             Directory.CreateDirectory(adrFolder);
+            Cout.Success("Created folder: {Folder}", adrFolder);
         }
 
-        adrFolder = Path.Combine(adrFolder, "adr");
+        adrFolder = Path.Combine(adrFolder, "Adr");
         if (!Directory.Exists(adrFolder))
         {
             Directory.CreateDirectory(adrFolder);
+            Cout.Success("Created folder: {Folder}", adrFolder);
+
+            IndexManipulator.CreateInitialFolderContent(adrFolder);
         }
 
         return adrFolder;
@@ -73,49 +75,71 @@ public sealed class AdrTool
     {
         DisplayInfo();
         var filesInFolder = Directory.GetFiles(_docsFolder, "*.md");
-        var indexFile = filesInFolder.FirstOrDefault(f => f.Contains("0000-index"));
+        _indexFile = filesInFolder.FirstOrDefault(f => f.Contains("0000-index"));
 
-        if (!string.IsNullOrEmpty(indexFile))
+        if (string.IsNullOrEmpty(_indexFile))
         {
-            ProcessIndexFile(indexFile);
+            Cout.Fail("Ubable to locate index file in '{Path}'", _docsFolder);
+            return;
         }
 
+        var entries = IndexManipulator.GetEntriesFromIndexFile(_indexFile);
+
+        if (entries.Any())
+        {
+            new LiveDataTable<AdrEntry>()
+                .WithHeader($"There are {entries.Count} entries in this ADR")
+                .WithDataSource(entries)
+                .WithColumns("Id", "Title")
+                .WithDataPicker(e => new List<string> { e.Number.ToString(), e.Title })
+                .WithEnterInstruction("Open entry #{0} with VS Code", p => p.Number.ToString())
+                .WithMultipleActions(new[]
+                {
+                    new LiveKeyAction<AdrEntry>('a', "Append new document", _ => AppendNew(entries)),
+                    new LiveKeyAction<AdrEntry>('r', "Rename", entry => Rename(entry, entries))
+                })
+                .WithSelectionAction(entry => VSCode.OpenFile(Path.Combine(_docsFolder, entry.Url)))
+                .Start();
+        }
     }
 
-    private static void ProcessIndexFile(string indexFile)
+    private void Rename(AdrEntry entry, List<AdrEntry> entries)
     {
-        var content = File.ReadAllText(indexFile);
-        var pipeline = new MarkdownPipelineBuilder().UseAdvancedExtensions().Build();
-        var document = Markdown.Parse(content, pipeline);
-        var table = document.Descendants<MdTable>().FirstOrDefault();
-        var adrEntries = new List<AdrEntry>();
+        throw new NotImplementedException();
+    }
 
-        if (table is not null)
+    private void AppendNew(List<AdrEntry> allEntries)
+    {
+        var nextNumber = allEntries.Max(e => e.Number) + 1;
+        var newName = AnsiConsole.Ask<string>("Enter a [yellow]title[/] for the new ADR: ");
+        var newFileName = $"{nextNumber:0000}-{newName.Replace(" ", "-").ToLower()}.md";
+        var newEntry = new AdrEntry
         {
-            foreach (var row in table.Descendants<MdTableRow>().Skip(1))
-            {
-                var cells = row.Descendants<TableCell>().ToList();
-                var number = string.Concat(cells[0].Descendants<LiteralInline>().Select(x => x.Content));
-                var title = string.Concat(cells[1].Descendants<LiteralInline>().Select(x => x.Content));
-                var link = cells[1].Descendants<LinkInline>().FirstOrDefault();
+            Number = nextNumber,
+            Title = newName,
+            Url = newFileName
+        };
 
-                adrEntries.Add(new()
-                {
-                    Number = int.Parse(number),
-                    Title = title,
-                    Url = link?.Url ?? string.Empty,
-                });
+        Cout.Success("New entry #{Number} titled '{Title}' will be created as {Path}", newEntry.Number, newEntry.Title, newEntry.Url);
+
+        if (AnsiConsole.Confirm("Do you want to Proceed?", defaultValue: false))
+        {
+            var created = DocumentCreator.Create(_docsFolder, newEntry);
+            if (string.IsNullOrEmpty(created))
+            {
+                Cout.Fail("Somehow, ths failed. I'm at a loss here!");
+                return;
             }
+            allEntries.Add(newEntry);
+            IndexManipulator.Rewrite(allEntries, _indexFile!);
+            VSCode.OpenFile(created);
         }
     }
 
     private void DisplayInfo()
     {
-        Cout.Cls();
-        Cout.Title("ADR Tool");
-        Cout.Hr("v1.0 by digitaldias. 2023");
-        Cout.Success("Working in folder '{DocsFolder}'", _docsFolder);
-        Cout.Hr();
+        Cout.Hr("ADR Tool v1.0.0 - 2023 - digitaldias");
+        Cout.Info(" ");
     }
 
     private string GetDocsFolder(string? givenPath)
