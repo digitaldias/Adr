@@ -96,7 +96,8 @@ public sealed class AdrTool
                 .WithMultipleActions(new[]
                 {
                     new LiveKeyAction<AdrEntry>('a', "Append new document", _ => AppendNew(entries)),
-                    new LiveKeyAction<AdrEntry>('r', "Rename", entry => Rename(entry, entries))
+                    new LiveKeyAction<AdrEntry>('r', "Rename", entry => Rename(entry, entries)),
+                    new LiveKeyAction<AdrEntry>('i', "Rebuild index from folder content", _ => IndexManipulator.RecreateIndex(_docsFolder))
                 })
                 .WithSelectionAction(entry => VSCode.OpenFile(Path.Combine(_docsFolder, entry.Url)))
                 .Start();
@@ -105,7 +106,28 @@ public sealed class AdrTool
 
     private void Rename(AdrEntry entry, List<AdrEntry> entries)
     {
-        throw new NotImplementedException();
+        var originalTitle = entry.Title;
+        var originalUrl = entry.Url;
+        var originalFilePath = Path.Combine(_docsFolder, originalUrl);
+
+        var newTitle = AnsiConsole.Ask<string>("New title: ");
+        entry.Title = newTitle;
+        entry.Url = $"./{entry.Number:0000}-{newTitle.Replace(" ", "-").ToLower()}.md";
+        var destinationPath = Path.Combine(_docsFolder, entry.Url);
+
+        var content = File.ReadAllText(originalFilePath);
+        Cout.Info("Opened {file}", originalFilePath);
+
+        content = content.Replace(originalTitle, newTitle);
+        Cout.Info("Title updated to '{title}'", newTitle);
+
+        File.WriteAllText(destinationPath, content);
+        Cout.Info("Saved as '{file}'", destinationPath);
+
+        File.Delete(originalFilePath);
+        Cout.Info("Deleted '{file}'", originalFilePath);
+
+        IndexManipulator.Rewrite(entries, _indexFile!);
     }
 
     private void AppendNew(List<AdrEntry> allEntries)

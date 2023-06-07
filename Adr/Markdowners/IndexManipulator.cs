@@ -1,4 +1,6 @@
-﻿using System.Text;
+﻿using System.Globalization;
+using System.Text;
+using System.Text.RegularExpressions;
 using Adr.Models;
 using Markdig;
 using Markdig.Extensions.Tables;
@@ -19,6 +21,92 @@ public sealed class IndexManipulator
             | 1 | [Record Architecture Decisions](./0001-record-architecture-decisions.md)| |
             """;
 
+    public static void RecreateIndex(string docsFolder)
+    {
+        var freshEntries = CreateEntryListFromDocsFolder(docsFolder);
+        if (freshEntries is null)
+        {
+            return;
+        }
+
+        var content = CreateContentFromEntries(freshEntries);
+
+        var filePath = Path.Combine(docsFolder, "0000-index.md");
+        File.WriteAllText(filePath, content, Encoding.UTF8);
+
+    }
+
+    public static string CreateContentFromEntries(IEnumerable<AdrEntry> entries)
+    {
+        var widestNumber = entries.Max(e => e.Number.ToString().Length);
+        var widestTitle = entries.Max(e => e.Title.Length + e.Url.Length);
+
+        if (widestNumber < 6)
+        {
+            widestNumber = 6;
+        }
+
+        var tableHeader = $"| Number | {"Title".PadRight(widestTitle + 4)} | Superseded by |";
+        var tableLines = $"| ------ | {new string('-', widestTitle + 4)} | ------------- |";
+
+        var builder = new StringBuilder(4096);
+        builder.AppendLine("# Archtecture Decision Records");
+        builder.AppendLine();
+        builder.AppendLine(tableHeader);
+        builder.AppendLine(tableLines);
+
+        foreach (var entry in entries)
+        {
+            var number = entry.Number.ToString().PadLeft(widestNumber);
+            var title = $"[{entry.Title}]({entry.Url})".PadRight(widestTitle + 4);
+            builder.AppendLine($"| {number} | {title} | |");
+        }
+
+        return builder.ToString();
+    }
+
+    private static IEnumerable<AdrEntry> CreateEntryListFromDocsFolder(string docsFolder)
+    {
+        // Match files starting with a number and ending in md. Extract number and title
+        const string digitPattern = @"^(\d+)-(.*).md$";
+
+        var allFiles = Directory.GetFiles(docsFolder, "*.md");
+        if (!allFiles.Any())
+        {
+            return Enumerable.Empty<AdrEntry>();
+        }
+
+        var allEntries = new List<AdrEntry>();
+        foreach (var file in allFiles)
+        {
+            var fileInfo = new FileInfo(file);
+            var testResult = Regex.Match(fileInfo.Name, digitPattern);
+            if (!testResult.Success)
+            {
+                continue;
+            }
+            var number = int.Parse(testResult.Groups[1].Value, CultureInfo.InvariantCulture);
+            var title = testResult.Groups[2].Value;
+            title = char.ToUpper(title[0]) + (title[1..]).Replace("-", " ");
+
+            // Skip the index file itself
+            if (number == 0 && title.Equals("Index", StringComparison.InvariantCultureIgnoreCase))
+            {
+                continue;
+            }
+
+            allEntries.Add(new AdrEntry
+            {
+                Number = number,
+                Title = title,
+                Url = $"./{fileInfo.Name}"
+            });
+        }
+
+        return allEntries.OrderBy(file => file.Number);
+    }
+
+
     public static void Rewrite(List<AdrEntry> allEntries, string indexFile)
     {
         var builder = new StringBuilder(InitialIndexContent);
@@ -29,8 +117,8 @@ public sealed class IndexManipulator
             var url = entry.Url.StartsWith("./") ? entry.Url : $"./{entry.Url}";
             builder.AppendLine($"| {entry.Number} | [{entry.Title}]({url}) | |");
         }
-        builder.AppendLine();
 
+        builder.AppendLine();
         var content = builder.ToString();
         File.WriteAllText(indexFile, content);
     }

@@ -1,4 +1,4 @@
-# 1. Stick to static helper classes
+# 1. Use static helper classes instead of DI and services
 
 2023-06-07
 
