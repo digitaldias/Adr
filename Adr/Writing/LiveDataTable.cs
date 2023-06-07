@@ -115,9 +115,9 @@ public class LiveDataTable<T>
             var keyAction = Console.ReadKey();
 
             // MultiKey Actions
-            if (_keyActions != null && _keyActions.Any())
+            if (_keyActions?.Any() == true)
             {
-                if (_keyActions.FirstOrDefault(ka => ka.Key == keyAction.KeyChar) is LiveKeyAction<T> result)
+                if (_keyActions.Find(ka => ka.Key == keyAction.KeyChar) is LiveKeyAction<T> result)
                 {
                     if (_selectedItem != null)
                     {
@@ -136,7 +136,6 @@ public class LiveDataTable<T>
             {
                 if (++_currentPage > _pageCount)
                     _currentPage = _pageCount;
-
             }
 
             // Previous page
@@ -189,7 +188,6 @@ public class LiveDataTable<T>
             }
             if (keepGoing)
                 BuildDataTable(ctx);
-
         } while (keepGoing);
     }
 
@@ -216,7 +214,6 @@ public class LiveDataTable<T>
 
     void BuildDataTable(LiveDisplayContext ctx)
     {
-
         ClearDataRows(ctx);
         ClearMasterTable(ctx);
 
@@ -239,7 +236,6 @@ public class LiveDataTable<T>
             var dataValues = _picker(subset[i]);
             if (_dataIndex == i)
             {
-
                 var colored = dataValues.Select(v => Cout.Wrap(v, Cout.Situation.Success));
                 _dataTable.AddRow(colored.ToArray());
             }
@@ -273,7 +269,6 @@ public class LiveDataTable<T>
 
         if (pageInfo.Length > 0 && message.Length > 0)
             finalMessage = $"{pageInfo}, press [[ENTER]] to {message}";
-
         else if (pageInfo.Length == 0 && message.Length > 0)
             finalMessage = $"Press [[ENTER]] to {message}";
 
@@ -282,7 +277,7 @@ public class LiveDataTable<T>
             _masterTable.AddRow($"[tan italic]{finalMessage}[/]");
         }
 
-        if (_keyActions != null && _keyActions.Count > 0)
+        if (_keyActions?.Count > 0)
         {
             var anotherTable = new Table();
             anotherTable.Border(TableBorder.None);
@@ -290,7 +285,7 @@ public class LiveDataTable<T>
             anotherTable.AddColumns("Key", "Description");
             _keyActions.ForEach(a => anotherTable.AddRow($"[tan italic][[{a.Key}]][/]", $"[tan italic]{a.Description}[/]"));
 
-            _masterTable.AddRow($"[tan italic]Additional commands:[/]");
+            _masterTable.AddRow("[tan italic]Additional commands:[/]");
             _masterTable.AddRow(anotherTable);
         }
         ctx.Refresh();
