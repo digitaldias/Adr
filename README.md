@@ -2,6 +2,8 @@
 
 ADR is a command-line tool that is used to create and maintain `Architecture Decision Records` as described by [Michael Nygård](https://cognitect.com/authors/MichaelNygard.html) in [The following blog article](https://cognitect.com/blog/2011/11/15/documenting-architecture-decisions).
 
+![SimpleAnimation](Docs/Images/adrTool.gif)
+
 ## Installation
 
 The tool is built and packaged as a `DotNet Tool`. If you just want to install it, then type the following into your console of choice: 
