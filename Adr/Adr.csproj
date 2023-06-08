@@ -13,10 +13,19 @@
     <Version>1.0.0</Version>
     <Authors>digitaldias</Authors>
     <Company>digitaldias</Company>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageReleaseNotes>Initial Version</PackageReleaseNotes>
+    <PackageTags>adr, architecture, decisions, records, cli, commandline, command-line</PackageTags>
+    <Description>A command-line tool for working with Architecture Decisions Records</Description>
+    <RepositoryUrl>https://github.com/digitaldias/AdrTool</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
   </PropertyGroup>
 
   <ItemGroup>
     <DotNetCliToolReference Include="Microsoft.DotNet.Cli.Utils" Version="2.0.0" />
+    <None Include="../README.md" Pack="true" PackagePath="." />
+    <None Include="../LICENSE" Pack="true" PackagePath="." />
   </ItemGroup>
 
   <PropertyGroup>
