@@ -56,7 +56,7 @@ public static class DocumentCreator
         var documentContent = $$"""
             # 1. {{newEntry.Title}}
 
-            {{DateTime.Now.ToString("yyyy-MM-dd")}}
+            {{DateTime.Now:yyyy-MM-dd}}
 
             ## Status
 

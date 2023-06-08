@@ -5,10 +5,21 @@
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 	</PropertyGroup>
+	<ItemGroup>
+	  <None Include="..\.editorconfig" Link=".editorconfig" />
+	</ItemGroup>
 
 	<ItemGroup>
 		<PackageReference Include="LibGit2Sharp" Version="0.27.2" />
 		<PackageReference Include="Markdig" Version="0.31.0" />
+		<PackageReference Include="Roslynator.Analyzers" Version="4.3.0">
+		  <PrivateAssets>all</PrivateAssets>
+		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
+		<PackageReference Include="Roslynator.Formatting.Analyzers" Version="4.3.0">
+		  <PrivateAssets>all</PrivateAssets>
+		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
 		<PackageReference Include="Spectre.Console" Version="0.47.0" />
 		<PackageReference Include="Spectre.Console.Analyzer" Version="0.47.0">
 			<PrivateAssets>all</PrivateAssets>

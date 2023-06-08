@@ -22,19 +22,11 @@ public static partial class Cout
     public static void Title(string titleText)
         => AnsiConsole.Write(
             new FigletText(titleText)
-                .LeftJustified()
-                .Color(Color.RoyalBlue1));
+            .LeftJustified()
+            .Color(Color.RoyalBlue1));
 
     public static void Failed(string message)
-    {
-        Write(Situation.Error, message);
-    }
-
-    private static List<string> ExtractPlaceholders(string messageTemplate)
-    {
-        var placeHolderMatches = Regex.Matches(messageTemplate, @"\{(\w+)\}");
-        return placeHolderMatches.Cast<Match>().Select(m => m.Groups[1].Value).ToList();
-    }
+        => Write(Situation.Error, message);
 
     private static void Write(Situation color, string message)
         => AnsiConsole.MarkupLine(Wrap(message, color));
@@ -44,7 +36,6 @@ public static partial class Cout
 
     public static string Bold(string text)
         => $"[bold]{text}[/]";
-
 
     public enum Situation
     {
@@ -57,7 +48,15 @@ public static partial class Cout
         InputLabel
     }
 
-    private static Dictionary<Situation, string> SituationColors = new()
+    private static List<string> ExtractPlaceholders(string messageTemplate)
+    {
+        const string placeholderPattern = @"\{(\w+)\}";
+        var placeHolderMatches = Regex.Matches(messageTemplate, placeholderPattern);
+
+        return placeHolderMatches.Cast<Match>().Select(m => m.Groups[1].Value).ToList();
+    }
+
+    private static readonly Dictionary<Situation, string> SituationColors = new()
     {
         { Situation.Information, "white" },
         { Situation.Success, "green" },

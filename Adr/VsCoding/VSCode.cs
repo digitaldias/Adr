@@ -8,7 +8,7 @@ public static class VSCode
     {
         try
         {
-            using (var process = new Process
+            using var process = new Process
             {
                 StartInfo = new ProcessStartInfo("code")
                 {
@@ -16,12 +16,10 @@ public static class VSCode
                     UseShellExecute = true,
                     CreateNoWindow = true,
                 }
-            })
-            {
-                process.Start();
-                process.WaitForExit();
-                return true;
-            }
+            };
+            process.Start();
+            process.WaitForExit();
+            return true;
         }
         catch (Exception ex)
         {

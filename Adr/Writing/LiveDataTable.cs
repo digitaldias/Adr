@@ -16,7 +16,7 @@ public class LiveDataTable<T>
     Func<T, IEnumerable<string>> _picker = default!;
     private Action<T> _selectionAction = default!;
     private T? _selectedItem = default!;
-    private string? _enterInstruction = default!;
+    private string? _enterInstruction;
     private Func<T, string> _idValuePicker = default!;
     private List<LiveKeyAction<T>> _keyActions = default!;
     private readonly Table _masterTable = default!;

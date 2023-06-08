@@ -9,8 +9,8 @@ namespace Adr;
 
 public sealed class AdrTool
 {
-    private string _rootFolder = string.Empty;
-    private string _docsFolder = string.Empty;
+    private readonly string _rootFolder = string.Empty;
+    private readonly string _docsFolder = string.Empty;
     private string? _indexFile;
 
     public bool Aborted { get; private set; }
@@ -75,7 +75,7 @@ public sealed class AdrTool
     {
         DisplayInfo();
         var filesInFolder = Directory.GetFiles(_docsFolder, "*.md");
-        _indexFile = filesInFolder.FirstOrDefault(f => f.Contains("0000-index"));
+        _indexFile = Array.Find(filesInFolder, f => f.Contains("0000-index"));
 
         if (string.IsNullOrEmpty(_indexFile))
         {
@@ -160,7 +160,7 @@ public sealed class AdrTool
         }
     }
 
-    private void DisplayInfo()
+    private static void DisplayInfo()
     {
         Cout.Hr("ADR Tool v1.0.0 - 2023 - digitaldias");
         Cout.Info(" ");

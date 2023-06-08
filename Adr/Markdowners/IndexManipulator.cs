@@ -11,7 +11,7 @@ using MdTableRow = Markdig.Extensions.Tables.TableRow;
 
 namespace Adr.Markdowners;
 
-public sealed class IndexManipulator
+public sealed partial class IndexManipulator
 {
     private const string InitialIndexContent = """
             # Index
@@ -58,7 +58,12 @@ public sealed class IndexManipulator
         {
             var number = entry.Number.ToString().PadLeft(widestNumber);
             var title = $"[{entry.Title}]({entry.Url})".PadRight(widestTitle + 4);
-            builder.AppendLine($"| {number} | {title} | |");
+            builder
+                .Append("| ")
+                .Append(number)
+                .Append(" | ")
+                .Append(title)
+                .AppendLine(" | |");
         }
 
         return builder.ToString();
@@ -66,9 +71,6 @@ public sealed class IndexManipulator
 
     private static IEnumerable<AdrEntry> CreateEntryListFromDocsFolder(string docsFolder)
     {
-        // Match files starting with a number and ending in md. Extract number and title
-        const string digitPattern = @"^(\d+)-(.*).md$";
-
         var allFiles = Directory.GetFiles(docsFolder, "*.md");
         if (!allFiles.Any())
         {
@@ -79,14 +81,14 @@ public sealed class IndexManipulator
         foreach (var file in allFiles)
         {
             var fileInfo = new FileInfo(file);
-            var testResult = Regex.Match(fileInfo.Name, digitPattern);
+            var testResult = NumberAndTitlePattern().Match(fileInfo.Name);
             if (!testResult.Success)
             {
                 continue;
             }
             var number = int.Parse(testResult.Groups[1].Value, CultureInfo.InvariantCulture);
             var title = testResult.Groups[2].Value;
-            title = char.ToUpper(title[0]) + (title[1..]).Replace("-", " ");
+            title = char.ToUpper(title[0]) + title[1..].Replace("-", " ");
 
             // Skip the index file itself
             if (number == 0 && title.Equals("Index", StringComparison.InvariantCultureIgnoreCase))
@@ -105,7 +107,6 @@ public sealed class IndexManipulator
         return allEntries.OrderBy(file => file.Number);
     }
 
-
     public static void Rewrite(List<AdrEntry> allEntries, string indexFile)
     {
         var builder = new StringBuilder(InitialIndexContent);
@@ -114,7 +115,14 @@ public sealed class IndexManipulator
         {
             var entry = allEntries[i];
             var url = entry.Url.StartsWith("./") ? entry.Url : $"./{entry.Url}";
-            builder.AppendLine($"| {entry.Number} | [{entry.Title}]({url}) | |");
+            builder
+                .Append("| ")
+                .Append(entry.Number)
+                .Append(" | [")
+                .Append(entry.Title)
+                .Append("](")
+                .Append(url)
+                .AppendLine(") | |");
         }
 
         builder.AppendLine();
@@ -181,4 +189,7 @@ public sealed class IndexManipulator
 
         return adrEntries;
     }
+
+    [GeneratedRegex("^(\\d+)-(.*).md$")]
+    private static partial Regex NumberAndTitlePattern();
 }
