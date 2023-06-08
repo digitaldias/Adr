@@ -9,17 +9,17 @@ public class LiveDataTable<T>
     private int _pageCount = 0;
     private int _dataIndex = 0;
 
-    private List<T> _sourceData;
-    private string _tableHeader;
-    private List<string> _tableColumns;
-    private Table _dataTable;
-    Func<T, IEnumerable<string>> _picker;
-    private Action<T> _selectionAction;
-    private T? _selectedItem;
-    private string? _enterInstruction;
-    private Func<T, string> _idValuePicker;
-    private List<LiveKeyAction<T>> _keyActions;
-    private readonly Table _masterTable;
+    private List<T> _sourceData = new();
+    private string _tableHeader = string.Empty;
+    private List<string> _tableColumns = new();
+    private Table _dataTable = default!;
+    Func<T, IEnumerable<string>> _picker = default!;
+    private Action<T> _selectionAction = default!;
+    private T? _selectedItem = default!;
+    private string? _enterInstruction = default!;
+    private Func<T, string> _idValuePicker = default!;
+    private List<LiveKeyAction<T>> _keyActions = default!;
+    private readonly Table _masterTable = default!;
 
     public LiveDataTable()
     {
@@ -274,7 +274,7 @@ public class LiveDataTable<T>
 
         if (!string.IsNullOrEmpty(finalMessage))
         {
-            _masterTable.AddRow($"[tan italic]{finalMessage}[/]");
+            _masterTable.AddRow($"[tan]{finalMessage}[/]");
         }
 
         if (_keyActions?.Count > 0)
@@ -283,9 +283,9 @@ public class LiveDataTable<T>
             anotherTable.Border(TableBorder.None);
             anotherTable.HideHeaders();
             anotherTable.AddColumns("Key", "Description");
-            _keyActions.ForEach(a => anotherTable.AddRow($"[tan italic][[{a.Key}]][/]", $"[tan italic]{a.Description}[/]"));
+            _keyActions.ForEach(a => anotherTable.AddRow($"[lime][[{a.Key}]][/]", $"[tan]{a.Description}[/]"));
 
-            _masterTable.AddRow("[tan italic]Additional commands:[/]");
+            _masterTable.AddRow("[white]Commands:[/]\n(Pressing any other key exits the app)");
             _masterTable.AddRow(anotherTable);
         }
         ctx.Refresh();

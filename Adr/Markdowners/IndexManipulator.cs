@@ -33,7 +33,6 @@ public sealed class IndexManipulator
 
         var filePath = Path.Combine(docsFolder, "0000-index.md");
         File.WriteAllText(filePath, content, Encoding.UTF8);
-
     }
 
     public static string CreateContentFromEntries(IEnumerable<AdrEntry> entries)

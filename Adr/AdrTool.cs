@@ -1,5 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
-using Adr.Markdowners;
+﻿using Adr.Markdowners;
 using Adr.Models;
 using Adr.VsCoding;
 using Adr.Writing;
@@ -10,18 +9,18 @@ namespace Adr;
 
 public sealed class AdrTool
 {
-    private string _rootFolder;
-    private string _docsFolder;
+    private string _rootFolder = string.Empty;
+    private string _docsFolder = string.Empty;
     private string? _indexFile;
+
+    public bool Aborted { get; private set; }
 
     public AdrTool(string givenPath)
     {
         if (!Path.Exists(givenPath))
         {
-            Cout.Fail("The given path '{Path}' does not exist", givenPath);
-
-            var message = $"The given path '{givenPath}' is not valid";
-            throw new UnmatchedPathException(message);
+            Cout.Fail("Error: The given path '{Path}' does not exist", givenPath);
+            return;
         }
 
         if (string.IsNullOrEmpty(givenPath) || givenPath == ".")
@@ -32,10 +31,9 @@ public sealed class AdrTool
         _rootFolder = GetGitRootFolder(givenPath);
         if (string.IsNullOrEmpty(_rootFolder))
         {
-            Cout.Fail("The provided Path '{ProvidedPath}' is not a git repository", givenPath);
-
-            var message = $"The given path '{givenPath}' is not a git repository";
-            throw new ValidationException(message);
+            Cout.Fail("Error: The provided Path '{ProvidedPath}' is not within a git repository", givenPath);
+            Aborted = true;
+            return;
         }
 
         _docsFolder = GetDocsFolder(givenPath);
@@ -47,8 +45,10 @@ public sealed class AdrTool
 
     private string AskForAndCreateAdrFolder()
     {
-        if (!AnsiConsole.Confirm("No ADR structure exists here. Create it?", defaultValue: false))
+        if (!AnsiConsole.Confirm("Did not find ADR document folder structure. Should I create it?", defaultValue: false))
         {
+            Cout.Info("Ok, aborting.");
+            this.Aborted = true;
             return string.Empty;
         }
 
@@ -79,7 +79,7 @@ public sealed class AdrTool
 
         if (string.IsNullOrEmpty(_indexFile))
         {
-            Cout.Fail("Ubable to locate index file in '{Path}'", _docsFolder);
+            Cout.Fail("Ubable to locate ADR index in '{Path}'", _docsFolder);
             return;
         }
 
@@ -88,18 +88,20 @@ public sealed class AdrTool
         if (entries.Any())
         {
             new LiveDataTable<AdrEntry>()
-                .WithHeader($"There are {entries.Count} entries in this ADR")
+                .WithHeader($"There are {entries.Count} Architecture decision(s) made so far in this solution\nADR path: [yellow]{_docsFolder}[/]\n")
                 .WithDataSource(entries)
                 .WithColumns("Id", "Title")
                 .WithDataPicker(e => new List<string> { e.Number.ToString(), e.Title })
-                .WithEnterInstruction("Open entry #{0} with VS Code", p => p.Number.ToString())
+                .WithEnterInstruction("open ADR #{0} in VS Code.\nUse arrow up/down to select.\n", p => p.Number.ToString())
                 .WithMultipleActions(new[]
                 {
-                    new LiveKeyAction<AdrEntry>('a', "Append new document", _ => AppendNew(entries)),
-                    new LiveKeyAction<AdrEntry>('r', "Rename", entry => Rename(entry, entries)),
-                    new LiveKeyAction<AdrEntry>('i', "Rebuild index from folder content", _ => IndexManipulator.RecreateIndex(_docsFolder))
+                    new LiveKeyAction<AdrEntry>('a', "Add new", _ => AppendNew(entries)),
+                    new LiveKeyAction<AdrEntry>('r', "Rename selected", entry => Rename(entry, entries)),
+                    new LiveKeyAction<AdrEntry>('i', "Recreate index from folder", _ => IndexManipulator.RecreateIndex(_docsFolder)),
+                    new LiveKeyAction<AdrEntry>('o', "Open ADR folder in VS Code", _ => VSCode.OpenFolder(_docsFolder))
                 })
                 .WithSelectionAction(entry => VSCode.OpenFile(Path.Combine(_docsFolder, entry.Url)))
+
                 .Start();
         }
     }

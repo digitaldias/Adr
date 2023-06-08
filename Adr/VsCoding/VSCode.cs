@@ -41,4 +41,15 @@ public static class VSCode
 
         Process.Start(startInfo);
     }
+
+    public static void OpenFolder(string docsFolder)
+    {
+        var startInfo = new ProcessStartInfo("code", docsFolder)
+        {
+            UseShellExecute = true,
+            CreateNoWindow = true
+        };
+
+        Process.Start(startInfo);
+    }
 }

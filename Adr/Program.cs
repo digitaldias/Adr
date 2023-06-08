@@ -21,7 +21,10 @@ public static class Program
             return 1;
         }
 
-        tool.Run();
+        if (!tool.Aborted)
+        {
+            tool.Run();
+        }
 
         return 0;
     }

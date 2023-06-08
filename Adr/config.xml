@@ -1,0 +1,8 @@
+<linker>
+  <assembly fullname="LibGit2Sharp">
+    <type fullname="*" />
+  </assembly>
+  <assembly fullname="Spectre.Console">
+    <type fullname="*" />
+  </assembly>  
+</linker>
