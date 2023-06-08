@@ -40,6 +40,9 @@ bld/
 # Visual Studio 2017 auto generated files
 Generated\ Files/
 
+# Visual Studio
+.vs/
+
 # MSTest test Results
 [Tt]est[Rr]esult*/
 [Bb]uild[Ll]og.*
@@ -525,3 +528,6 @@ $RECYCLE.BIN/
 /.vs/AdrTool/DesignTimeBuild/.dtbcache.v2
 /.vs/AdrTool/FileContentIndex/5e1635a6-a743-4c45-80b0-7a3a6c4b4d5c.vsidx
 /.vs/AdrTool/FileContentIndex/b608f0c4-9936-4a3f-ae25-bfba1f0cdebf.vsidx
+/.vs/AdrTool/v17/.futdcache.v2
+/.vs/ProjectEvaluation/adrtool.metadata.v7.bin
+/.vs/ProjectEvaluation/adrtool.projects.v7.bin

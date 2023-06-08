@@ -10,6 +10,8 @@ public class LiveKeyAction<T>
     }
 
     public char Key { get; set; }
+
     public string Description { get; set; }
+
     public Action<T> Action { get; set; }
 }

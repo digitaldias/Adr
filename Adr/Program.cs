@@ -1,4 +1,4 @@
-﻿using Adr.VsCoding;
+using Adr.VsCoding;
 
 namespace Adr;
 
@@ -6,11 +6,12 @@ public static class Program
 {
     public static int Main(string[] args)
     {
-        if (args.Any(arg => arg.StartsWith("--help")))
+        if (args.Any(arg => arg.StartsWith("--help", StringComparison.InvariantCultureIgnoreCase)))
         {
             ShowHelp();
             return 0;
         }
+
         var path = args.Any() ? args[0] : Environment.CurrentDirectory;
 
         var tool = new AdrTool(path);

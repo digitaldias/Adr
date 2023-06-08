@@ -1,4 +1,5 @@
-﻿using Adr.Markdowners;
+using System.Globalization;
+using Adr.Markdowners;
 using Adr.Models;
 using Adr.VsCoding;
 using Adr.Writing;
@@ -12,8 +13,6 @@ public sealed class AdrTool
     private readonly string _rootFolder = string.Empty;
     private readonly string _docsFolder = string.Empty;
     private string? _indexFile;
-
-    public bool Aborted { get; private set; }
 
     public AdrTool(string givenPath)
     {
@@ -43,12 +42,49 @@ public sealed class AdrTool
         }
     }
 
+    public bool Aborted { get; private set; }
+
+    public void Run()
+    {
+        DisplayInfo();
+        var filesInFolder = Directory.GetFiles(_docsFolder, "*.md");
+        _indexFile = Array.Find(filesInFolder, f => f.Contains("0000-index"));
+
+        if (string.IsNullOrEmpty(_indexFile))
+        {
+            Cout.Fail("Ubable to locate ADR index in '{Path}'", _docsFolder);
+            return;
+        }
+
+        var entries = IndexManipulator.GetEntriesFromIndexFile(_indexFile);
+
+        if (entries.Any())
+        {
+            new LiveDataTable<AdrEntry>()
+                .WithHeader($"There are {entries.Count} Architecture decision(s) made so far in this solution\nADR path: [yellow]{_docsFolder}[/]\n")
+                .WithDataSource(entries)
+                .WithColumns("Id", "Title")
+                .WithDataPicker(e => new List<string> { e.Number.ToString(CultureInfo.InvariantCulture), e.Title })
+                .WithEnterInstruction("open ADR #{0} in VS Code.\nUse arrow up/down to select.\n", p => p.Number.ToString(CultureInfo.InvariantCulture))
+                .WithMultipleActions(new[]
+                {
+                    new LiveKeyAction<AdrEntry>('a', "Add new", _ => AppendNew(entries)),
+                    new LiveKeyAction<AdrEntry>('r', "Rename selected", entry => Rename(entry, entries)),
+                    new LiveKeyAction<AdrEntry>('i', "Recreate index from folder", _ => IndexManipulator.RecreateIndex(_docsFolder)),
+                    new LiveKeyAction<AdrEntry>('o', "Open ADR folder in VS Code", _ => VSCode.OpenFolder(_docsFolder))
+                })
+                .WithSelectionAction(entry => VSCode.OpenFile(Path.Combine(_docsFolder, entry.Url)))
+
+                .Start();
+        }
+    }
+
     private string AskForAndCreateAdrFolder()
     {
         if (!AnsiConsole.Confirm("Did not find ADR document folder structure. Should I create it?", defaultValue: false))
         {
             Cout.Info("Ok, aborting.");
-            this.Aborted = true;
+            Aborted = true;
             return string.Empty;
         }
 
@@ -71,41 +107,6 @@ public sealed class AdrTool
         return adrFolder;
     }
 
-    public void Run()
-    {
-        DisplayInfo();
-        var filesInFolder = Directory.GetFiles(_docsFolder, "*.md");
-        _indexFile = Array.Find(filesInFolder, f => f.Contains("0000-index"));
-
-        if (string.IsNullOrEmpty(_indexFile))
-        {
-            Cout.Fail("Ubable to locate ADR index in '{Path}'", _docsFolder);
-            return;
-        }
-
-        var entries = IndexManipulator.GetEntriesFromIndexFile(_indexFile);
-
-        if (entries.Any())
-        {
-            new LiveDataTable<AdrEntry>()
-                .WithHeader($"There are {entries.Count} Architecture decision(s) made so far in this solution\nADR path: [yellow]{_docsFolder}[/]\n")
-                .WithDataSource(entries)
-                .WithColumns("Id", "Title")
-                .WithDataPicker(e => new List<string> { e.Number.ToString(), e.Title })
-                .WithEnterInstruction("open ADR #{0} in VS Code.\nUse arrow up/down to select.\n", p => p.Number.ToString())
-                .WithMultipleActions(new[]
-                {
-                    new LiveKeyAction<AdrEntry>('a', "Add new", _ => AppendNew(entries)),
-                    new LiveKeyAction<AdrEntry>('r', "Rename selected", entry => Rename(entry, entries)),
-                    new LiveKeyAction<AdrEntry>('i', "Recreate index from folder", _ => IndexManipulator.RecreateIndex(_docsFolder)),
-                    new LiveKeyAction<AdrEntry>('o', "Open ADR folder in VS Code", _ => VSCode.OpenFolder(_docsFolder))
-                })
-                .WithSelectionAction(entry => VSCode.OpenFile(Path.Combine(_docsFolder, entry.Url)))
-
-                .Start();
-        }
-    }
-
     private void Rename(AdrEntry entry, List<AdrEntry> entries)
     {
         var originalTitle = entry.Title;
@@ -114,7 +115,7 @@ public sealed class AdrTool
 
         var newTitle = AnsiConsole.Ask<string>("New title: ");
         entry.Title = newTitle;
-        entry.Url = $"./{entry.Number:0000}-{newTitle.Replace(" ", "-").ToLower()}.md";
+        entry.Url = $"./{entry.Number:0000}-{newTitle.Replace(" ", "-").ToLower(CultureInfo.InvariantCulture)}.md";
         var destinationPath = Path.Combine(_docsFolder, entry.Url);
 
         var content = File.ReadAllText(originalFilePath);
@@ -136,7 +137,7 @@ public sealed class AdrTool
     {
         var nextNumber = allEntries.Max(e => e.Number) + 1;
         var newName = AnsiConsole.Ask<string>("Enter a [yellow]title[/] for the new ADR: ");
-        var newFileName = $"{nextNumber:0000}-{newName.Replace(" ", "-").ToLower()}.md";
+        var newFileName = $"{nextNumber:0000}-{newName.Replace(" ", "-").ToLower(CultureInfo.InvariantCulture)}.md";
         var newEntry = new AdrEntry
         {
             Number = nextNumber,
@@ -154,6 +155,7 @@ public sealed class AdrTool
                 Cout.Fail("Somehow, ths failed. I'm at a loss here!");
                 return;
             }
+
             allEntries.Add(newEntry);
             IndexManipulator.Rewrite(allEntries, _indexFile!);
             VSCode.OpenFile(created);
@@ -183,19 +185,8 @@ public sealed class AdrTool
     }
 
     private static bool BothPathsShareRoot(string path1, string path2)
-    {
-        if (path1.StartsWith(path2, StringComparison.InvariantCultureIgnoreCase))
-        {
-            return true;
-        }
-
-        if (path2.StartsWith(path1, StringComparison.InvariantCultureIgnoreCase))
-        {
-            return true;
-        }
-
-        return false;
-    }
+        => path1.StartsWith(path2, StringComparison.InvariantCultureIgnoreCase)
+        || path2.StartsWith(path1, StringComparison.InvariantCultureIgnoreCase);
 
     private static string GetGitRootFolder(string givenPath)
     {

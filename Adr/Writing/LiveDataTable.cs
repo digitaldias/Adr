@@ -1,30 +1,35 @@
-﻿using Spectre.Console;
+using System.Globalization;
+using Spectre.Console;
 
 namespace Adr.Writing;
 
 public class LiveDataTable<T>
 {
     private readonly int _pageSize = 20;
-    private int _currentPage = 0;
-    private int _pageCount = 0;
-    private int _dataIndex = 0;
+    private readonly Table _masterTable = default!;
+
+    private int _currentPage;
+    private int _pageCount;
+    private int _dataIndex;
+
+    private string _tableHeader = string.Empty;
+    private string? _enterInstruction;
 
     private List<T> _sourceData = new();
-    private string _tableHeader = string.Empty;
     private List<string> _tableColumns = new();
-    private Table _dataTable = default!;
-    Func<T, IEnumerable<string>> _picker = default!;
-    private Action<T> _selectionAction = default!;
-    private T? _selectedItem = default!;
-    private string? _enterInstruction;
-    private Func<T, string> _idValuePicker = default!;
     private List<LiveKeyAction<T>> _keyActions = default!;
-    private readonly Table _masterTable = default!;
+
+    private Func<T, IEnumerable<string>> _picker = default!;
+    private Func<T, string> _idValuePicker = default!;
+    private Action<T> _selectionAction = default!;
+
+    private Table _dataTable = default!;
+    private T? _selectedItem = default!;
 
     public LiveDataTable()
     {
         _masterTable = new Table().Border(TableBorder.None);
-        _masterTable.AddColumn("");
+        _masterTable.AddColumn(string.Empty);
     }
 
     public LiveDataTable<T> WithHeader(string message)
@@ -39,7 +44,6 @@ public class LiveDataTable<T>
     /// </summary>
     /// <param name="message">The message that indicates what happens when you press [ENTER]</param>
     /// <param name="idValuePicker">Optional idValuePicker, so you can format your message with the selected Id</param>
-    /// <returns></returns>
     public LiveDataTable<T> WithEnterInstruction(string message, Func<T, string>? idValuePicker = null)
     {
         _enterInstruction = message;
@@ -64,7 +68,9 @@ public class LiveDataTable<T>
     {
         _tableColumns = new List<string>();
         foreach (var column in columns)
+        {
             _tableColumns.Add($"[bold orangered1]{column}[/]");
+        }
 
         return this;
     }
@@ -90,7 +96,9 @@ public class LiveDataTable<T>
     public void Start()
     {
         if (_sourceData.Count == 0)
+        {
             return;
+        }
 
         _pageCount = _sourceData.Count / _pageSize;
         _selectedItem = _sourceData[0];
@@ -104,12 +112,16 @@ public class LiveDataTable<T>
             });
 
         if (_selectedItem != null)
+        {
             _selectionAction(_selectedItem);
+        }
     }
 
-    void PerformPaging(LiveDisplayContext ctx)
+    private void PerformPaging(LiveDisplayContext ctx)
     {
         bool keepGoing = true;
+
+#pragma warning disable SA1500 // Braces for multi-line statements should not share line
         do
         {
             var keyAction = Console.ReadKey();
@@ -135,14 +147,18 @@ public class LiveDataTable<T>
             if (keyAction.Key == ConsoleKey.RightArrow || keyAction.Key == ConsoleKey.PageDown)
             {
                 if (++_currentPage > _pageCount)
+                {
                     _currentPage = _pageCount;
+                }
             }
 
             // Previous page
             else if (keyAction.Key == ConsoleKey.LeftArrow || keyAction.Key == ConsoleKey.PageUp)
             {
                 if (--_currentPage < 0)
+                {
                     _currentPage = 0;
+                }
             }
 
             // Last page
@@ -161,14 +177,18 @@ public class LiveDataTable<T>
             else if (keyAction.Key == ConsoleKey.DownArrow)
             {
                 if (++_dataIndex >= _pageSize)
+                {
                     _dataIndex = _pageSize;
+                }
             }
 
             // Select index upwards
             else if (keyAction.Key == ConsoleKey.UpArrow)
             {
                 if (--_dataIndex < 0)
+                {
                     _dataIndex = 0;
+                }
             }
 
             // We selected a row
@@ -186,33 +206,44 @@ public class LiveDataTable<T>
                 _selectedItem = default;
                 keepGoing = false;
             }
+
             if (keepGoing)
+            {
                 BuildDataTable(ctx);
+            }
         } while (keepGoing);
+#pragma warning restore SA1500 // Braces for multi-line statements should not share line
     }
 
-    void ClearDataRows(LiveDisplayContext ctx)
+    private void ClearDataRows(LiveDisplayContext ctx)
     {
         if (_dataTable is null)
+        {
             return;
+        }
 
         while (_dataTable.Rows.Count > 0)
+        {
             _dataTable.Rows.RemoveAt(0);
+        }
 
         ctx.Refresh();
     }
 
-    void ClearMasterTable(LiveDisplayContext ctx)
+    private void ClearMasterTable(LiveDisplayContext ctx)
     {
         if (_masterTable is { } && _masterTable.Rows.Count > 0)
         {
             for (int i = _masterTable.Rows.Count - 1; i > 0; i--)
+            {
                 _masterTable.Rows.RemoveAt(i);
+            }
+
             ctx.Refresh();
         }
     }
 
-    void BuildDataTable(LiveDisplayContext ctx)
+    private void BuildDataTable(LiveDisplayContext ctx)
     {
         ClearDataRows(ctx);
         ClearMasterTable(ctx);
@@ -227,7 +258,7 @@ public class LiveDataTable<T>
         BuildTableFooter(ctx);
     }
 
-    void AddDataRowsFromSource(LiveDisplayContext ctx)
+    private void AddDataRowsFromSource(LiveDisplayContext ctx)
     {
         var skipAmount = _currentPage * _pageSize;
         var subset = _sourceData.Skip(skipAmount).Take(_pageSize).ToList();
@@ -243,19 +274,24 @@ public class LiveDataTable<T>
             {
                 _dataTable.AddRow(dataValues.ToArray());
             }
+
             while (_dataIndex >= subset.Count)
+            {
                 _dataIndex--;
+            }
 
             _selectedItem = subset[_dataIndex];
             ctx.Refresh();
         }
     }
 
-    void BuildTableFooter(LiveDisplayContext ctx)
+    private void BuildTableFooter(LiveDisplayContext ctx)
     {
         var realCount = 3 + _keyActions?.Count ?? 0;
         if (_masterTable.Rows.Count == realCount)
+        {
             _masterTable.RemoveRow(2 + realCount);
+        }
 
         var pageInfo = _pageCount > 0
             ? $"On page {_currentPage}/{_pageCount}"
@@ -263,14 +299,20 @@ public class LiveDataTable<T>
 
         var message = _enterInstruction ?? string.Empty;
         if (_idValuePicker != null)
-            message = string.Format(_enterInstruction!, _idValuePicker(_selectedItem!));
+        {
+            message = string.Format(CultureInfo.InvariantCulture, _enterInstruction!, _idValuePicker(_selectedItem!));
+        }
 
         var finalMessage = pageInfo;
 
         if (pageInfo.Length > 0 && message.Length > 0)
+        {
             finalMessage = $"{pageInfo}, press [[ENTER]] to {message}";
+        }
         else if (pageInfo.Length == 0 && message.Length > 0)
+        {
             finalMessage = $"Press [[ENTER]] to {message}";
+        }
 
         if (!string.IsNullOrEmpty(finalMessage))
         {
@@ -288,6 +330,7 @@ public class LiveDataTable<T>
             _masterTable.AddRow("[white]Commands:[/]\n(Pressing any other key exits the app)");
             _masterTable.AddRow(anotherTable);
         }
+
         ctx.Refresh();
     }
 }

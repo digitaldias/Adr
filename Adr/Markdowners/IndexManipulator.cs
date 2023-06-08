@@ -1,4 +1,4 @@
-﻿using System.Globalization;
+using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
 using Adr.Models;
@@ -37,7 +37,7 @@ public sealed partial class IndexManipulator
 
     public static string CreateContentFromEntries(IEnumerable<AdrEntry> entries)
     {
-        var widestNumber = entries.Max(e => e.Number.ToString().Length);
+        var widestNumber = entries.Max(e => e.Number.ToString(CultureInfo.InvariantCulture).Length);
         var widestTitle = entries.Max(e => e.Title.Length + e.Url.Length);
 
         if (widestNumber < 6)
@@ -56,7 +56,7 @@ public sealed partial class IndexManipulator
 
         foreach (var entry in entries)
         {
-            var number = entry.Number.ToString().PadLeft(widestNumber);
+            var number = entry.Number.ToString(CultureInfo.InvariantCulture).PadLeft(widestNumber);
             var title = $"[{entry.Title}]({entry.Url})".PadRight(widestTitle + 4);
             builder
                 .Append("| ")
@@ -69,44 +69,6 @@ public sealed partial class IndexManipulator
         return builder.ToString();
     }
 
-    private static IEnumerable<AdrEntry> CreateEntryListFromDocsFolder(string docsFolder)
-    {
-        var allFiles = Directory.GetFiles(docsFolder, "*.md");
-        if (!allFiles.Any())
-        {
-            return Enumerable.Empty<AdrEntry>();
-        }
-
-        var allEntries = new List<AdrEntry>();
-        foreach (var file in allFiles)
-        {
-            var fileInfo = new FileInfo(file);
-            var testResult = NumberAndTitlePattern().Match(fileInfo.Name);
-            if (!testResult.Success)
-            {
-                continue;
-            }
-            var number = int.Parse(testResult.Groups[1].Value, CultureInfo.InvariantCulture);
-            var title = testResult.Groups[2].Value;
-            title = char.ToUpper(title[0]) + title[1..].Replace("-", " ");
-
-            // Skip the index file itself
-            if (number == 0 && title.Equals("Index", StringComparison.InvariantCultureIgnoreCase))
-            {
-                continue;
-            }
-
-            allEntries.Add(new AdrEntry
-            {
-                Number = number,
-                Title = title,
-                Url = $"./{fileInfo.Name}"
-            });
-        }
-
-        return allEntries.OrderBy(file => file.Number);
-    }
-
     public static void Rewrite(List<AdrEntry> allEntries, string indexFile)
     {
         var builder = new StringBuilder(InitialIndexContent);
@@ -114,7 +76,7 @@ public sealed partial class IndexManipulator
         for (int i = 1; i < allEntries.Count; i++)
         {
             var entry = allEntries[i];
-            var url = entry.Url.StartsWith("./") ? entry.Url : $"./{entry.Url}";
+            var url = entry.Url.StartsWith("./", StringComparison.OrdinalIgnoreCase) ? entry.Url : $"./{entry.Url}";
             builder
                 .Append("| ")
                 .Append(entry.Number)
@@ -180,7 +142,7 @@ public sealed partial class IndexManipulator
 
                 adrEntries.Add(new()
                 {
-                    Number = int.Parse(number),
+                    Number = int.Parse(number, CultureInfo.InvariantCulture),
                     Title = title,
                     Url = link?.Url ?? string.Empty,
                 });
@@ -188,6 +150,45 @@ public sealed partial class IndexManipulator
         }
 
         return adrEntries;
+    }
+
+    private static IEnumerable<AdrEntry> CreateEntryListFromDocsFolder(string docsFolder)
+    {
+        var allFiles = Directory.GetFiles(docsFolder, "*.md");
+        if (!allFiles.Any())
+        {
+            return Enumerable.Empty<AdrEntry>();
+        }
+
+        var allEntries = new List<AdrEntry>();
+        foreach (var file in allFiles)
+        {
+            var fileInfo = new FileInfo(file);
+            var testResult = NumberAndTitlePattern().Match(fileInfo.Name);
+            if (!testResult.Success)
+            {
+                continue;
+            }
+
+            var number = int.Parse(testResult.Groups[1].Value, CultureInfo.InvariantCulture);
+            var title = testResult.Groups[2].Value;
+            title = $"{char.ToUpper(title[0], CultureInfo.InvariantCulture)}{title[1..].Replace("-", " ")}";
+
+            // Skip the index file itself
+            if (number == 0 && title.Equals("Index", StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            allEntries.Add(new AdrEntry
+            {
+                Number = number,
+                Title = title,
+                Url = $"./{fileInfo.Name}"
+            });
+        }
+
+        return allEntries.OrderBy(file => file.Number);
     }
 
     [GeneratedRegex("^(\\d+)-(.*).md$")]
