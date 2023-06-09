@@ -46,14 +46,14 @@ public sealed class AdrTool
             {
                 Number = 1,
                 Title = "Record Architecture Decision Records",
-                Url = "0001-record-architecture-decision-records.md",
+                FilePath = "0001-record-architecture-decision-records.md",
                 SupersededBy = 0
             };
 
             DocumentCreator.Create(_adrFolder, newEntry, DocumentCreator.DecisionToUseAdrAsMarkdown);
 
             _adrEntries.Add(1, newEntry);
-            _indexFile = IndexManipulator.CreateIndexFromEnties(_adrEntries, _adrFolder);
+            _indexFile = IndexManipulator.CreateIndexFromAdrEntries(_adrEntries, _adrFolder);
         }
         else
         {
@@ -94,12 +94,47 @@ public sealed class AdrTool
                 .WithDataPicker(e => new List<string> { e.Number.ToString(CultureInfo.InvariantCulture), e.Title })
                 .WithEnterInstruction("open ADR #{0} in VS Code.\nUse arrow up/down to select.\n", p => p.Number.ToString(CultureInfo.InvariantCulture))
                 .WithMultipleActions(tableMenu)
-                .WithSelectionAction(entry => VSCode.OpenFile(Path.Combine(_adrFolder, entry.Url)))
+                .WithSelectionAction(entry => VSCode.OpenFile(Path.Combine(_adrFolder, entry.FilePath)))
                 .Start();
         }
     }
 
-    private void Supersede(AdrEntry e) => throw new NotImplementedException();
+    private void Supersede(AdrEntry existingEntry)
+    {
+        Cout.Info("Supersede Entry titled: {existing}", existingEntry.Title);
+        var confirmd = AnsiConsole.Confirm($"Create a new Entry that supersedes #{existingEntry.Number}?", defaultValue: false);
+        if (!confirmd)
+        {
+            Cout.Warn("Supersede '{title}' aborted", existingEntry.Title);
+            return;
+        }
+
+        var title = AnsiConsole.Ask<string>("[yellow]New title:[/] ", existingEntry.Title);
+        var newEntry = CreateNewAdrFromTitle(title);
+        existingEntry.SupersededBy = newEntry.Number;
+
+        _adrEntries.Add(newEntry.Number, newEntry);
+
+        var created = DocumentCreator.Create(_adrFolder, newEntry);
+
+        IndexManipulator.CreateIndexFromAdrEntries(_adrEntries, _adrFolder);
+
+        VSCode.OpenFile(created);
+    }
+
+    private AdrEntry CreateNewAdrFromTitle(string title)
+    {
+        var nextNumber = _adrEntries.Max(e => e.Key) + 1;
+        var fileNamePart = title.Replace(" ", "-", StringComparison.OrdinalIgnoreCase).ToLower(CultureInfo.InvariantCulture).Trim();
+
+        return new AdrEntry
+        {
+            Number = nextNumber,
+            Title = title,
+            FilePath = $"./{nextNumber:0000}-{fileNamePart}.md",
+            SupersededBy = 0
+        };
+    }
 
     private string AskForAndCreateAdrFolder()
     {
@@ -130,14 +165,14 @@ public sealed class AdrTool
     private void Rename(AdrEntry entry)
     {
         var originalTitle = entry.Title;
-        var originalUrl = entry.Url;
+        var originalUrl = entry.FilePath;
         var originalFilePath = Path.Combine(_adrFolder, originalUrl);
 
         Cout.Info("Rename entry: {EntryTitle}\n", entry.Title);
         var newTitle = AnsiConsole.Ask<string>("[yellow]New title:[/] ", entry.Title);
         entry.Title = newTitle;
-        entry.Url = $"./{entry.Number:0000}-{newTitle.Replace(" ", "-").ToLower(CultureInfo.InvariantCulture)}.md";
-        var destinationPath = Path.Combine(_adrFolder, entry.Url);
+        entry.FilePath = $"./{entry.Number:0000}-{newTitle.Replace(" ", "-").ToLower(CultureInfo.InvariantCulture)}.md";
+        var destinationPath = Path.Combine(_adrFolder, entry.FilePath);
 
         var content = File.ReadAllText(originalFilePath);
         Cout.Info("Opened {file}", originalFilePath);
@@ -160,17 +195,18 @@ public sealed class AdrTool
     private void AppendNew()
     {
         var nextNumber = _adrEntries.Max(e => e.Value.Number) + 1;
-        Cout.Info("Creating a new ADR entry");
+        Cout.Info("Create New");
         var newName = AnsiConsole.Ask<string>("Enter a descriptive [yellow]Title[/] for your ADR: ");
-        var newFileName = $"{nextNumber:0000}-{newName.Replace(" ", "-").ToLower(CultureInfo.InvariantCulture)}.md";
+        var newFileName = $"./{nextNumber:0000}-{newName.Replace(" ", "-").ToLower(CultureInfo.InvariantCulture)}.md";
         var newEntry = new AdrEntry
         {
             Number = nextNumber,
             Title = newName,
-            Url = newFileName
+            FilePath = newFileName,
+            SupersededBy = 0
         };
 
-        Cout.Success("New entry #{Number} titled '{Title}' will be created as {Path}", newEntry.Number, newEntry.Title, newEntry.Url);
+        Cout.Success("Entry #{Number}: '{Title}' will be created as {Path}", newEntry.Number, newEntry.Title, newEntry.FilePath);
 
         if (AnsiConsole.Confirm("Do you want to Proceed?", defaultValue: false))
         {

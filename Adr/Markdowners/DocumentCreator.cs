@@ -35,7 +35,7 @@ public static class DocumentCreator
             return string.Empty;
         }
 
-        var filePath = Path.Combine(docsPath, newEntry.Url);
+        var filePath = Path.Combine(docsPath, newEntry.FilePath);
 
         var documentContent = string.IsNullOrEmpty(content)
             ? $$"""

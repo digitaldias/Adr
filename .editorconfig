@@ -435,6 +435,7 @@ csharp_style_prefer_utf8_string_literals = true:suggestion
 dotnet_diagnostic.SA1602.severity = silent
 dotnet_diagnostic.SA1204.severity = silent
 dotnet_diagnostic.SA1306.severity = silent
+dotnet_diagnostic.SA1629.severity = silent
 
 
 

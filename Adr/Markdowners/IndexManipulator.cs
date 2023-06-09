@@ -27,7 +27,7 @@ public sealed partial class IndexManipulator
         File.WriteAllText(filePath, content, Encoding.UTF8);
     }
 
-    public static string CreateIndexFromEnties(SortedList<int, AdrEntry> entries, string docsFolder)
+    public static string CreateIndexFromAdrEntries(SortedList<int, AdrEntry> entries, string docsFolder)
     {
         var content = CreateIndexFileContent(entries);
         var filePath = Path.Combine(docsFolder, "0000-index.md");
@@ -39,7 +39,7 @@ public sealed partial class IndexManipulator
     public static string CreateIndexFileContent(SortedList<int, AdrEntry> entries)
     {
         var widestNumber = entries.Max(e => e.Value.Number.ToString(CultureInfo.InvariantCulture).Length);
-        var widestTitle = entries.Max(e => e.Value.Title.Length + e.Value.Url.Length);
+        var widestTitle = entries.Max(e => e.Value.Title.Length + e.Value.FilePath.Length);
 
         if (widestNumber < 6)
         {
@@ -58,7 +58,7 @@ public sealed partial class IndexManipulator
         foreach (var entry in entries)
         {
             var number = entry.Value.Number.ToString(CultureInfo.InvariantCulture).PadLeft(widestNumber);
-            var title = $"[{entry.Value.Title}]({entry.Value.Url})".PadRight(widestTitle + 4);
+            var title = $"[{entry.Value.Title}]({entry.Value.FilePath})".PadRight(widestTitle + 4);
             var super = entry.Value.SupersededBy > 0
                 ? entry.Value.SupersededBy.ToString(CultureInfo.InvariantCulture)
                 : string.Empty;
@@ -118,7 +118,7 @@ public sealed partial class IndexManipulator
                 {
                     Number = int.Parse(number, CultureInfo.InvariantCulture),
                     Title = title,
-                    Url = link?.Url ?? string.Empty,
+                    FilePath = link?.Url ?? string.Empty,
                     SupersededBy = superseededBy
                 });
             }
@@ -159,7 +159,7 @@ public sealed partial class IndexManipulator
             {
                 Number = number,
                 Title = title,
-                Url = $"./{fileInfo.Name}"
+                FilePath = $"./{fileInfo.Name}"
             });
         }
 
