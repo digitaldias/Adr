@@ -44,6 +44,7 @@ public class LiveDataTable<T>
     /// </summary>
     /// <param name="message">The message that indicates what happens when you press [ENTER]</param>
     /// <param name="idValuePicker">Optional idValuePicker, so you can format your message with the selected Id</param>
+    /// <returns>A chainable LiveDataTable&lt;<typeparamref name="T"/>&gt;</returns>
     public LiveDataTable<T> WithEnterInstruction(string message, Func<T, string>? idValuePicker = null)
     {
         _enterInstruction = message;
@@ -119,7 +120,7 @@ public class LiveDataTable<T>
 
     private void PerformPaging(LiveDisplayContext ctx)
     {
-        bool keepGoing = true;
+        var keepGoing = true;
 
 #pragma warning disable SA1500 // Braces for multi-line statements should not share line
         do
@@ -234,7 +235,7 @@ public class LiveDataTable<T>
     {
         if (_masterTable is { } && _masterTable.Rows.Count > 0)
         {
-            for (int i = _masterTable.Rows.Count - 1; i > 0; i--)
+            for (var i = _masterTable.Rows.Count - 1; i > 0; i--)
             {
                 _masterTable.Rows.RemoveAt(i);
             }
@@ -262,7 +263,8 @@ public class LiveDataTable<T>
     {
         var skipAmount = _currentPage * _pageSize;
         var subset = _sourceData.Skip(skipAmount).Take(_pageSize).ToList();
-        for (int i = 0; i < subset.Count; i++)
+
+        for (var i = 0; i < subset.Count; i++)
         {
             var dataValues = _picker(subset[i]);
             if (_dataIndex == i)
