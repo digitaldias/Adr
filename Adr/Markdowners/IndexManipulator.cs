@@ -13,14 +13,6 @@ namespace Adr.Markdowners;
 
 public sealed partial class IndexManipulator
 {
-    private const string InitialIndexContent = """
-            # Index
-
-            | Number | Title | Superseded by |
-            | ------ | ----- | ------------- |
-            | 1 | [Record Architecture Decisions](./0001-record-architecture-decisions.md)| |
-            """;
-
     public static void RecreateIndex(string docsFolder)
     {
         var freshEntries = CreateEntryListFromDocsFolder(docsFolder);
@@ -29,16 +21,25 @@ public sealed partial class IndexManipulator
             return;
         }
 
-        var content = CreateContentFromEntries(freshEntries);
+        var content = CreateIndexFileContent(freshEntries);
 
         var filePath = Path.Combine(docsFolder, "0000-index.md");
         File.WriteAllText(filePath, content, Encoding.UTF8);
     }
 
-    public static string CreateContentFromEntries(IEnumerable<AdrEntry> entries)
+    public static string CreateIndexFromEnties(SortedList<int, AdrEntry> entries, string docsFolder)
     {
-        var widestNumber = entries.Max(e => e.Number.ToString(CultureInfo.InvariantCulture).Length);
-        var widestTitle = entries.Max(e => e.Title.Length + e.Url.Length);
+        var content = CreateIndexFileContent(entries);
+        var filePath = Path.Combine(docsFolder, "0000-index.md");
+        File.WriteAllText(filePath, content, Encoding.UTF8);
+
+        return filePath;
+    }
+
+    public static string CreateIndexFileContent(SortedList<int, AdrEntry> entries)
+    {
+        var widestNumber = entries.Max(e => e.Value.Number.ToString(CultureInfo.InvariantCulture).Length);
+        var widestTitle = entries.Max(e => e.Value.Title.Length + e.Value.Url.Length);
 
         if (widestNumber < 6)
         {
@@ -46,7 +47,7 @@ public sealed partial class IndexManipulator
         }
 
         var tableHeader = $"| Number | {"Title".PadRight(widestTitle + 4)} | Superseded by |";
-        var tableLines = $"| ------ | {new string('-', widestTitle + 4)} | ------------- |";
+        var tableLines = $"| {new string('-', widestNumber)} | {new string('-', widestTitle + 4)} | ------------- |";
 
         var builder = new StringBuilder(4096);
         builder.AppendLine("# Archtecture Decision Records");
@@ -56,71 +57,42 @@ public sealed partial class IndexManipulator
 
         foreach (var entry in entries)
         {
-            var number = entry.Number.ToString(CultureInfo.InvariantCulture).PadLeft(widestNumber);
-            var title = $"[{entry.Title}]({entry.Url})".PadRight(widestTitle + 4);
+            var number = entry.Value.Number.ToString(CultureInfo.InvariantCulture).PadLeft(widestNumber);
+            var title = $"[{entry.Value.Title}]({entry.Value.Url})".PadRight(widestTitle + 4);
+            var super = entry.Value.SupersededBy > 0
+                ? entry.Value.SupersededBy.ToString(CultureInfo.InvariantCulture)
+                : string.Empty;
             builder
                 .Append("| ")
                 .Append(number)
                 .Append(" | ")
                 .Append(title)
-                .AppendLine(" | |");
+                .Append(" | ")
+                .Append(super)
+                .AppendLine(" |");
         }
 
         return builder.ToString();
     }
 
-    public static void Rewrite(List<AdrEntry> allEntries, string indexFile)
+    public static void Rewrite(SortedList<int, AdrEntry> allEntries, string indexFile)
     {
-        var builder = new StringBuilder(InitialIndexContent);
-        builder.AppendLine();
-        for (int i = 1; i < allEntries.Count; i++)
-        {
-            var entry = allEntries[i];
-            var url = entry.Url.StartsWith("./", StringComparison.OrdinalIgnoreCase) ? entry.Url : $"./{entry.Url}";
-            builder
-                .Append("| ")
-                .Append(entry.Number)
-                .Append(" | [")
-                .Append(entry.Title)
-                .Append("](")
-                .Append(url)
-                .AppendLine(") | |");
-        }
-
-        builder.AppendLine();
-        var content = builder.ToString();
+        var content = CreateIndexFileContent(allEntries);
         File.WriteAllText(indexFile, content);
     }
 
-    public static void CreateInitialFolderContent(string adrFolder)
+    public static IEnumerable<AdrEntry> ReadAdrEntries(string adrFolder)
     {
-        var recordAdrs = $"""
-            # 1. Record Architecture Decisions
+        var filesInFolder = Directory.GetFiles(adrFolder, "*.md");
+        var indexFile = Array.Find(filesInFolder, f => f.Contains("0000-index"));
 
-            {DateTime.Now:yyyy-MM-dd}
+        if (string.IsNullOrEmpty(indexFile))
+        {
+            Cout.Fail("Ubable to locate ADR index in '{Path}'", adrFolder);
+            return Enumerable.Empty<AdrEntry>();
+        }
 
-            ## Status
-
-            Accepted
-
-            ## Context
-
-            We need to record the architectural decisions made on this project.
-
-            ## Decision
-
-            We will use Architecture Decision Records, as described by Michael Nygard in this article: http://thinkrelevance.com/blog/2011/11/15/documenting-architecture-decisions
-
-            ## Consequences
-
-            See Michael Nygard's article, linked above.
-            """;
-
-        File.WriteAllText(Path.Combine(adrFolder, "0000-index.md"), InitialIndexContent);
-        Cout.Success("Wrote file: {FileName}", "0000-index.md");
-
-        File.WriteAllText(Path.Combine(adrFolder, "0001-record-architecture-decisions.md"), recordAdrs);
-        Cout.Success("Wrote file: {FileName}", "0001-record-architecture-decisions.md");
+        return GetEntriesFromIndexFile(indexFile);
     }
 
     public static List<AdrEntry> GetEntriesFromIndexFile(string indexFile)
@@ -139,12 +111,15 @@ public sealed partial class IndexManipulator
                 var number = string.Concat(cells[0].Descendants<LiteralInline>().Select(x => x.Content));
                 var title = string.Concat(cells[1].Descendants<LiteralInline>().Select(x => x.Content));
                 var link = cells[1].Descendants<LinkInline>().FirstOrDefault();
+                var superseededByString = string.Concat(cells[2].Descendants<LiteralInline>().Select(x => x.Content));
+                var superseededBy = string.IsNullOrEmpty(superseededByString) ? 0 : int.Parse(superseededByString, CultureInfo.InvariantCulture);
 
                 adrEntries.Add(new()
                 {
                     Number = int.Parse(number, CultureInfo.InvariantCulture),
                     Title = title,
                     Url = link?.Url ?? string.Empty,
+                    SupersededBy = superseededBy
                 });
             }
         }
@@ -152,15 +127,15 @@ public sealed partial class IndexManipulator
         return adrEntries;
     }
 
-    private static IEnumerable<AdrEntry> CreateEntryListFromDocsFolder(string docsFolder)
+    private static SortedList<int, AdrEntry> CreateEntryListFromDocsFolder(string docsFolder)
     {
         var allFiles = Directory.GetFiles(docsFolder, "*.md");
         if (!allFiles.Any())
         {
-            return Enumerable.Empty<AdrEntry>();
+            return new();
         }
 
-        var allEntries = new List<AdrEntry>();
+        var allEntries = new SortedList<int, AdrEntry>();
         foreach (var file in allFiles)
         {
             var fileInfo = new FileInfo(file);
@@ -180,7 +155,7 @@ public sealed partial class IndexManipulator
                 continue;
             }
 
-            allEntries.Add(new AdrEntry
+            allEntries.Add(number, new AdrEntry
             {
                 Number = number,
                 Title = title,
@@ -188,7 +163,7 @@ public sealed partial class IndexManipulator
             });
         }
 
-        return allEntries.OrderBy(file => file.Number);
+        return allEntries;
     }
 
     [GeneratedRegex("^(\\d+)-(.*).md$")]
