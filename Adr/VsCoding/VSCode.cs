@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 
 namespace Adr.VsCoding;
 
@@ -31,6 +31,7 @@ public static class VSCode
 
     public static void OpenFile(string filePath)
     {
+        Cout.Success("Opening '{FilePath}' in VS Code", filePath);
         var startInfo = new ProcessStartInfo("code", filePath)
         {
             UseShellExecute = true,
@@ -42,6 +43,7 @@ public static class VSCode
 
     public static void OpenFolder(string docsFolder)
     {
+        Cout.Info("Opening folder '[yellow]{_adrFolder}[/]' in VS Code", docsFolder);
         var startInfo = new ProcessStartInfo("code", docsFolder)
         {
             UseShellExecute = true,
