@@ -99,11 +99,11 @@ public sealed class AdrTool
 
         var tableMenu = new[]
         {
-            new LiveKeyAction<AdrEntry>('a', "Add new", _ => AddNewAdrEntry()),
-            new LiveKeyAction<AdrEntry>('r', "Rename selected", entry => Rename(entry)),
-            new LiveKeyAction<AdrEntry>('i', "Recreate index from folder", _ => IndexManipulator.RecreateIndex(_adrFolder)),
+            new LiveKeyAction<AdrEntry>('a', "Add", _ => AddNewAdrEntry()),
+            new LiveKeyAction<AdrEntry>('r', "Rename", entry => Rename(entry)),
+            new LiveKeyAction<AdrEntry>('s', "Supersede", e => Supersede(e)),
             new LiveKeyAction<AdrEntry>('o', "Open ADR folder in VS Code", _ => VSCode.OpenFolder(_adrFolder)),
-            new LiveKeyAction<AdrEntry>('s', "Supersede with new ADR entry", e => Supersede(e))
+            new LiveKeyAction<AdrEntry>('i', "Recreate index from folder content", _ => IndexManipulator.RecreateIndex(_adrFolder)),
         };
 
         if (_adrEntries.Any())
