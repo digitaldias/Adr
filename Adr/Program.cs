@@ -1,4 +1,7 @@
+using System.Reflection;
+using Adr.Commands;
 using Adr.VsCoding;
+using McMaster.Extensions.CommandLineUtils;
 
 namespace Adr;
 
@@ -6,36 +9,42 @@ public static class Program
 {
     public static int Main(string[] args)
     {
-        if (args.Any(arg => arg.StartsWith("--help", StringComparison.InvariantCultureIgnoreCase)))
+        var app = new CommandLineApplication
         {
-            ShowHelp();
-            return 0;
-        }
+            Name = "ADR",
+            FullName = "ADR-Cli"
+        };
+        app.VersionOptionFromAssemblyAttributes(Assembly.GetExecutingAssembly());
+        app.Description = "This is a command-line application for managing ADRs.";
+        app.HelpOption("-h|--help");
+        app.ExtendedHelpText = """
 
-        var path = args.Any() ? args[0] : Environment.CurrentDirectory;
+            You can use this application in two modes:
+                1. Run the application with no parameters or with a path (absolute or relative) to start in default mode.
+                2. Use the 'new' or 'open' subcommands in quickmode (you know what you're doing).
+            """;
 
-        if (!VSCode.IsVSCodeInstalled())
+        var pathArgument = app.Argument("path", "The path to use. Defaults to current directory when not provided.");
+
+        NewCommand.Configure(app);
+        OpenCommand.Configure(app);
+
+        app.OnExecute(() =>
         {
-            Cout.Fail("In order to use this tool, you must have {VsCode} installed and active in your {Path}", "Visual Studio Code", "PATH");
-            return 1;
-        }
+            if (!VSCode.IsVSCodeInstalled())
+            {
+                Cout.Fail("In order to use this tool, you must have {VsCode} installed and active in your {Path}", "Visual Studio Code", "PATH");
+                return;
+            }
 
-        var tool = new AdrTool(path);
-        if (!tool.Aborted)
-        {
-            tool.Run();
-        }
+            var path = string.IsNullOrEmpty(pathArgument.Value) ? Directory.GetCurrentDirectory() : pathArgument.Value;
+            var tool = new AdrTool(path);
+            if (!tool.Aborted)
+            {
+                tool.Run();
+            }
+        });
 
-        return 0;
-    }
-
-    private static void ShowHelp()
-    {
-        Cout.Cls();
-        Cout.Title("ADR-Tool");
-        Cout.Hr();
-
-        Cout.Info("Interactive tool for working with ADR records. Point to your solution folder to get started.");
-        Cout.Info("Usage: {Adr} {Path}", "adr", "[[path]]");
+        return app.Execute(args);
     }
 }
