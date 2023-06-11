@@ -15,7 +15,7 @@ public sealed class AdrTool
     private readonly string _adrFolder = string.Empty;
     private readonly string? _indexFile;
 
-    public AdrTool(string givenPath)
+    public AdrTool(string? givenPath)
     {
         if (string.IsNullOrEmpty(givenPath) || givenPath == ".")
         {
@@ -63,10 +63,8 @@ public sealed class AdrTool
 
     public bool Aborted { get; private set; }
 
-    public void Run()
+    public void Run(string? command = "", string? titleText = "")
     {
-        DisplayInfo();
-
         var entries = IndexManipulator.ReadAdrEntries(_adrFolder);
         foreach (var entry in entries)
         {
@@ -76,9 +74,32 @@ public sealed class AdrTool
             }
         }
 
+        if (!string.IsNullOrEmpty(command))
+        {
+            var doneDiddit = false;
+            switch (command)
+            {
+                case "new":
+                    AddNewAdrEntry(titleText);
+                    doneDiddit = true;
+                    break;
+                case "open":
+                    VSCode.OpenFolder(_adrFolder);
+                    doneDiddit = true;
+                    break;
+            }
+
+            if (doneDiddit)
+            {
+                return;
+            }
+        }
+
+        DisplayInfo();
+
         var tableMenu = new[]
         {
-            new LiveKeyAction<AdrEntry>('a', "Add new", _ => AppendNew()),
+            new LiveKeyAction<AdrEntry>('a', "Add new", _ => AddNewAdrEntry()),
             new LiveKeyAction<AdrEntry>('r', "Rename selected", entry => Rename(entry)),
             new LiveKeyAction<AdrEntry>('i', "Recreate index from folder", _ => IndexManipulator.RecreateIndex(_adrFolder)),
             new LiveKeyAction<AdrEntry>('o', "Open ADR folder in VS Code", _ => VSCode.OpenFolder(_adrFolder)),
@@ -88,10 +109,10 @@ public sealed class AdrTool
         if (_adrEntries.Any())
         {
             new LiveDataTable<AdrEntry>()
-                .WithHeader($"There are {entries.Count()} Architecture decision(s) made so far in this solution\nADR path: [yellow]{_adrFolder}[/]\n")
+                .WithHeader($"There are {entries.Count()} Architecture decision(s) in this solution\nADR path: [yellow]{_adrFolder}[/]\n")
                 .WithDataSource(entries)
-                .WithColumns("Id", "Title")
-                .WithDataPicker(e => new List<string> { e.Number.ToString(CultureInfo.InvariantCulture), e.Title })
+                .WithColumns("Id", "Title", "Superseded by")
+                .WithDataPicker(e => new List<string> { e.Number.ToString(CultureInfo.InvariantCulture), e.Title, e.SupersededBy > 0 ? e.SupersededBy.ToString(CultureInfo.InvariantCulture) : " " })
                 .WithEnterInstruction("open ADR #{0} in VS Code.\nUse arrow up/down to select.\n", p => p.Number.ToString(CultureInfo.InvariantCulture))
                 .WithMultipleActions(tableMenu)
                 .WithSelectionAction(entry => VSCode.OpenFile(Path.Combine(_adrFolder, entry.FilePath)))
@@ -110,7 +131,7 @@ public sealed class AdrTool
         }
 
         var title = AnsiConsole.Ask<string>("[yellow]New title:[/] ", existingEntry.Title);
-        var newEntry = CreateNewAdrFromTitle(title);
+        var newEntry = CreateAdrEntryFromTitle(title);
         existingEntry.SupersededBy = newEntry.Number;
 
         _adrEntries.Add(newEntry.Number, newEntry);
@@ -122,7 +143,7 @@ public sealed class AdrTool
         VSCode.OpenFile(created);
     }
 
-    private AdrEntry CreateNewAdrFromTitle(string title)
+    private AdrEntry CreateAdrEntryFromTitle(string title)
     {
         var nextNumber = _adrEntries.Max(e => e.Key) + 1;
         var fileNamePart = title.Replace(" ", "-", StringComparison.OrdinalIgnoreCase).ToLower(CultureInfo.InvariantCulture).Trim();
@@ -192,39 +213,35 @@ public sealed class AdrTool
         IndexManipulator.Rewrite(_adrEntries, _indexFile!);
     }
 
-    private void AppendNew()
+    private void AddNewAdrEntry(string? title = "")
     {
-        var nextNumber = _adrEntries.Max(e => e.Value.Number) + 1;
-        Cout.Info("Create New");
-        var newName = AnsiConsole.Ask<string>("Enter a descriptive [yellow]Title[/] for your ADR: ");
-        var newFileName = $"./{nextNumber:0000}-{newName.Replace(" ", "-").ToLower(CultureInfo.InvariantCulture)}.md";
-        var newEntry = new AdrEntry
+        if (string.IsNullOrEmpty(title?.Trim()))
         {
-            Number = nextNumber,
-            Title = newName,
-            FilePath = newFileName,
-            SupersededBy = 0
-        };
-
-        Cout.Success("Entry #{Number}: '{Title}' will be created as {Path}", newEntry.Number, newEntry.Title, newEntry.FilePath);
-
-        if (AnsiConsole.Confirm("Do you want to Proceed?", defaultValue: false))
-        {
-            var created = DocumentCreator.Create(_adrFolder, newEntry);
-            if (string.IsNullOrEmpty(created))
-            {
-                Cout.Fail("Somehow, ths failed. I'm at a loss here!");
-                return;
-            }
-
-            _adrEntries.Add(newEntry.Number, newEntry);
-            IndexManipulator.Rewrite(_adrEntries, _indexFile!);
-            VSCode.OpenFile(created);
+            Cout.Info("Create New");
+            title = AnsiConsole.Ask<string>("Enter a descriptive [yellow]Title[/] for your ADR: ");
         }
-        else
+
+        if (_adrEntries.Any(e => e.Value.Title.Equals(title, StringComparison.OrdinalIgnoreCase)))
         {
-            Cout.Warn("No document created. Program finished");
+            Cout.Fail("An ADR with the title '{title}' already exists", title);
+            return;
         }
+
+        var newEntry = CreateAdrEntryFromTitle(title);
+        var newEntryFullPath = DocumentCreator.Create(_adrFolder, newEntry);
+
+        Cout.Success("Created ADR #{Number}, '{Title}'", newEntry.Number.ToString("0000", CultureInfo.InvariantCulture), newEntry.Title);
+        Cout.Success("In folder: [yellow]{_adrFolder}[/]", _adrFolder);
+
+        if (string.IsNullOrEmpty(newEntryFullPath))
+        {
+            Cout.Fail("Somehow, this failed. I'm at a loss here!");
+            return;
+        }
+
+        _adrEntries.Add(newEntry.Number, newEntry);
+        IndexManipulator.Rewrite(_adrEntries, _indexFile!);
+        VSCode.OpenFile(newEntryFullPath);
     }
 
     private static void DisplayInfo()
