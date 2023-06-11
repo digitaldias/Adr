@@ -10,12 +10,12 @@
 
   <PropertyGroup>
     <PackageId>ADR-Cli</PackageId>
-    <Version>1.0.1</Version>
+    <Version>1.0.2</Version>
     <Authors>digitaldias</Authors>
     <Company>digitaldias</Company>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <PackageReleaseNotes>Add ability to supersede an existing ADR</PackageReleaseNotes>
+    <PackageReleaseNotes>Introduce the first subcommand 'new'</PackageReleaseNotes>
     <PackageTags>adr, architecture, decisions, records, cli, commandline, command-line</PackageTags>
     <Description>A command-line tool for working with Architecture Decisions Records</Description>
     <RepositoryUrl>https://github.com/digitaldias/AdrTool</RepositoryUrl>
@@ -41,6 +41,7 @@
   <ItemGroup>
     <PackageReference Include="LibGit2Sharp" Version="0.27.2" />
     <PackageReference Include="Markdig" Version="0.31.0" />
+    <PackageReference Include="McMaster.Extensions.CommandLineUtils" Version="4.0.2" />
     <PackageReference Include="Roslynator.Analyzers" Version="4.3.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
