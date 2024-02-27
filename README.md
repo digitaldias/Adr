@@ -8,6 +8,7 @@ ADR is a command-line tool that is used to create and maintain `Architecture Dec
 
 | Version | Description |
 | ------- | ----------- |
+| 2.0.1   | Fixes wrong display of package version and years |
 | 2.0.0   | Add support for .Net8, and rename the adr folders to use `doc/adr` in all lowercase to satisfy linux users |
 | 1.0.2   | Add quickmode actions `new` and `open` |
 | 1.0.1   | Add support for superseding an ADR |

@@ -6,15 +6,16 @@
     <Nullable>enable</Nullable>
     <NoWarn>SA0001</NoWarn>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <AssemblyVersion>2.0.1</AssemblyVersion>
   </PropertyGroup>
   <PropertyGroup>
     <PackageId>ADR-Cli</PackageId>
-    <Version>2.0.0</Version>
+    <Version>2.0.1</Version>
     <Authors>digitaldias</Authors>
     <Company>digitaldias</Company>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <PackageReleaseNotes>Updated to .Net8, fixed compatibility with linux. 'Docs/Adr' folders are now 'doc/adr'</PackageReleaseNotes>
+    <PackageReleaseNotes>Fixes wrong display of package version and years</PackageReleaseNotes>
     <PackageTags>adr, architecture, decisions, records, cli, commandline, command-line</PackageTags>
     <Description>A command-line tool for working with Architecture Decisions Records</Description>
     <RepositoryUrl>https://github.com/digitaldias/AdrTool</RepositoryUrl>

@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Reflection;
 using Adr.Markdowners;
 using Adr.Models;
 using Adr.VsCoding;
@@ -114,7 +115,7 @@ public sealed class AdrTool
                 .WithHeader($"There are {entries.Count()} Architecture decision(s) in this solution\nADR path: [yellow]{_adrFolder}[/]\n")
                 .WithDataSource(entries)
                 .WithColumns("Id", "Title", "Superseded by")
-                .WithDataPicker(e => new List<string> { e.Number.ToString(CultureInfo.InvariantCulture), e.Title, e.SupersededBy > 0 ? e.SupersededBy.ToString(CultureInfo.InvariantCulture) : " " })
+                .WithDataPicker(e => [e.Number.ToString(CultureInfo.InvariantCulture), e.Title, e.SupersededBy > 0 ? e.SupersededBy.ToString(CultureInfo.InvariantCulture) : " "])
                 .WithEnterInstruction("open ADR #{0} in VS Code.\nUse arrow up/down to select.\n", p => p.Number.ToString(CultureInfo.InvariantCulture))
                 .WithMultipleActions(tableMenu)
                 .WithSelectionAction(entry => VSCode.OpenFile(Path.Combine(_adrFolder, entry.FilePath)))
@@ -248,8 +249,9 @@ public sealed class AdrTool
 
     private static void DisplayInfo()
     {
+        var version = Assembly.GetExecutingAssembly().GetName().Version!;
         Cout.Cls();
-        Cout.Hr("ADR Tool v1.0.0 - 2023 - digitaldias");
+        Cout.Hr($"ADR Tool v{version.Major}.{version.Minor}.{version.Build} - 2023-2024 - digitaldias");
         Cout.Info(" ");
     }
 
