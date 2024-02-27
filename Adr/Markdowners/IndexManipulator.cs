@@ -130,7 +130,7 @@ public sealed partial class IndexManipulator
     private static SortedList<int, AdrEntry> CreateEntryListFromDocsFolder(string docsFolder)
     {
         var allFiles = Directory.GetFiles(docsFolder, "*.md");
-        if (!allFiles.Any())
+        if (allFiles.Length == 0)
         {
             return new();
         }

@@ -8,9 +8,11 @@ using Spectre.Console;
 
 namespace Adr;
 
+#pragma warning disable SA1010 // Opening square brackets should be spaced correctly
 public sealed class AdrTool
 {
-    private readonly SortedList<int, AdrEntry> _adrEntries = new();
+    private readonly SortedList<int, AdrEntry> _adrEntries = [];
+
     private readonly string _gitRootPath = string.Empty;
     private readonly string _adrFolder = string.Empty;
     private readonly string? _indexFile;
@@ -106,7 +108,7 @@ public sealed class AdrTool
             new LiveKeyAction<AdrEntry>('i', "Recreate index from folder content", _ => IndexManipulator.RecreateIndex(_adrFolder)),
         };
 
-        if (_adrEntries.Any())
+        if (_adrEntries.Count != 0)
         {
             new LiveDataTable<AdrEntry>()
                 .WithHeader($"There are {entries.Count()} Architecture decision(s) in this solution\nADR path: [yellow]{_adrFolder}[/]\n")
@@ -166,14 +168,14 @@ public sealed class AdrTool
             return string.Empty;
         }
 
-        var adrFolder = Path.Combine(_gitRootPath, "Docs");
+        var adrFolder = Path.Combine(_gitRootPath, "doc");
         if (!Directory.Exists(adrFolder))
         {
             Directory.CreateDirectory(adrFolder);
             Cout.Success("Created folder: {Folder}", adrFolder);
         }
 
-        adrFolder = Path.Combine(adrFolder, "Adr");
+        adrFolder = Path.Combine(adrFolder, "adr");
         if (!Directory.Exists(adrFolder))
         {
             Directory.CreateDirectory(adrFolder);
@@ -255,10 +257,18 @@ public sealed class AdrTool
     {
         while (!string.IsNullOrEmpty(givenPath) && BothPathsShareRoot(givenPath, _gitRootPath))
         {
-            var sampler = Path.Combine(givenPath, "docs", "adr");
+            var sampler = Path.Combine(givenPath, "doc", "adr");
             if (Directory.Exists(sampler))
             {
                 return sampler;
+            }
+            else
+            {
+                sampler = Path.Combine(givenPath, "docs", "adr");
+                if (Directory.Exists(sampler))
+                {
+                    return sampler;
+                }
             }
 
             givenPath = Directory.GetParent(givenPath)?.FullName;
@@ -284,3 +294,4 @@ public sealed class AdrTool
         }
     }
 }
+#pragma warning restore SA1010 // Opening square brackets should be spaced correctly

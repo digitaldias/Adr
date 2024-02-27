@@ -128,7 +128,7 @@ public class LiveDataTable<T>
             var keyAction = Console.ReadKey();
 
             // MultiKey Actions
-            if (_keyActions?.Any() == true)
+            if (_keyActions?.Count > 0)
             {
                 if (_keyActions.Find(ka => ka.Key == keyAction.KeyChar) is LiveKeyAction<T> result)
                 {
